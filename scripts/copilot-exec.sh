@@ -40,6 +40,8 @@ case "$HOST" in
 esac
 ORCHESTRA_HOME="${ORCHESTRA_HOME:-$DEFAULT_HOME}"
 JOBS_DIR="$ORCHESTRA_HOME/jobs"
+MAX_PID=4194304
+STATUS_WAIT_TIMEOUT=600
 mkdir -p "$JOBS_DIR"
 
 # -- helpers ----------------------------------------------------------------
@@ -86,7 +88,7 @@ require_valid_job_id() {
 
 valid_pid() {
   # Linux pid_max commonly tops out at 2^22; reject obviously implausible values.
-  [[ "$1" =~ ^[1-9][0-9]*$ ]] && (( $1 <= 4194304 ))
+  [[ "$1" =~ ^[1-9][0-9]*$ ]] && (( $1 <= MAX_PID ))
 }
 
 errexit_is_on() {
@@ -236,7 +238,7 @@ if [ "$CMD_TYPE" = "status" ]; then
     f="$JOBS_DIR/$JOB_ARG.meta.json"
     [ -f "$f" ] || { echo "No such job: $JOB_ARG" >&2; exit 1; }
     if $WAIT; then
-      deadline=$(( $(date +%s) + 600 ))
+      deadline=$(( $(date +%s) + STATUS_WAIT_TIMEOUT ))
       while :; do
         st=$(meta_get "$f" status)
         case "$st" in
