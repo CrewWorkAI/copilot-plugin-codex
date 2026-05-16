@@ -203,6 +203,12 @@ STUB
   [[ "$output" == *"Invalid job id"* ]]
 }
 
+@test "rejects caller-supplied job ids containing dot-dot" {
+  run bash "$EXEC" rescue "hi" --job-id release..candidate
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Invalid job id"* ]]
+}
+
 @test "result prints transcript when present" {
   bash "$EXEC" rescue "two" --job-id j2 >/dev/null
   run bash "$EXEC" result j2
@@ -226,6 +232,15 @@ STUB
   meta="$ORCHESTRA_HOME/jobs/j4.meta.json"
   jq '.pid = -1 | .status = "running"' "$meta" > "$meta.tmp" && mv "$meta.tmp" "$meta"
   run bash "$EXEC" cancel j4
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Invalid PID"* ]]
+}
+
+@test "cancel rejects implausibly large pid metadata" {
+  bash "$EXEC" rescue "three" --job-id j5 >/dev/null
+  meta="$ORCHESTRA_HOME/jobs/j5.meta.json"
+  jq '.pid = 999999999 | .status = "running"' "$meta" > "$meta.tmp" && mv "$meta.tmp" "$meta"
+  run bash "$EXEC" cancel j5
   [ "$status" -eq 1 ]
   [[ "$output" == *"Invalid PID"* ]]
 }

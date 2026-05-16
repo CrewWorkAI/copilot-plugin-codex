@@ -73,7 +73,7 @@ PY
 }
 
 valid_job_id() {
-  [[ "$1" =~ ^[A-Za-z0-9._-]+$ ]]
+  [[ "$1" =~ ^[A-Za-z0-9._-]+$ ]] && [[ "$1" != *".."* ]]
 }
 
 require_valid_job_id() {
@@ -85,7 +85,7 @@ require_valid_job_id() {
 }
 
 valid_pid() {
-  [[ "$1" =~ ^[1-9][0-9]*$ ]]
+  [[ "$1" =~ ^[1-9][0-9]*$ ]] && (( $1 <= 4194304 ))
 }
 
 # Atomically patch a JSON metadata file. Falls back to python3 if jq is absent.
