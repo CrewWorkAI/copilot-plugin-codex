@@ -40,7 +40,8 @@ case "$HOST" in
 esac
 ORCHESTRA_HOME="${ORCHESTRA_HOME:-$DEFAULT_HOME}"
 JOBS_DIR="$ORCHESTRA_HOME/jobs"
-# Typical Linux pid_max ceiling (2^22); used as a conservative upper bound.
+# Conservative upper bound based on Linux's common 2^22 pid_max ceiling; this
+# is meant to catch obviously invalid PIDs, not mirror the live system limit.
 MAX_PID=4194304
 STATUS_WAIT_TIMEOUT=600
 mkdir -p "$JOBS_DIR"
@@ -76,7 +77,7 @@ PY
 }
 
 valid_job_id() {
-  [[ "$1" =~ ^[A-Za-z0-9._-]+$ ]] && [[ "$1" != *".."* ]]
+  [[ "$1" =~ ^[A-Za-z0-9._-]+$ ]] && [[ "$1" != .* ]] && [[ "$1" != *".."* ]]
 }
 
 require_valid_job_id() {
@@ -95,6 +96,18 @@ valid_pid() {
 
 errexit_is_on() {
   shopt -qo errexit
+}
+
+save_errexit_state() {
+  errexit_is_on && echo on || echo off
+}
+
+restore_errexit_state() {
+  if [ "$1" = "on" ]; then
+    set -e
+  else
+    set +e
+  fi
 }
 
 # Atomically patch a JSON metadata file. Falls back to python3 if jq is absent.
@@ -360,12 +373,11 @@ EOF
 COPILOT_BIN="${COPILOT_BIN:-copilot}"
 
 if $BACKGROUND; then
-  ( had_errexit=false
-    errexit_is_on && had_errexit=true
+  ( errexit_state="$(save_errexit_state)"
     set +e
     "$COPILOT_BIN" "${COPILOT_ARGS[@]}" > "$TRANSCRIPT" 2>&1
     EXIT=$?
-    $had_errexit && set -e
+    restore_errexit_state "$errexit_state"
     STATUS=$([ $EXIT -eq 0 ] && echo "completed" || echo "failed")
     meta_set "$META" status "$STATUS"
     meta_set_int "$META" exit_code "$EXIT"
@@ -376,12 +388,11 @@ if $BACKGROUND; then
   echo "Watch: status $JOB_ID  |  Output: result $JOB_ID"
   exit 0
 else
-  had_errexit=false
-  errexit_is_on && had_errexit=true
+  errexit_state="$(save_errexit_state)"
   set +e
   "$COPILOT_BIN" "${COPILOT_ARGS[@]}" 2>&1 | tee "$TRANSCRIPT"
   EXIT=${PIPESTATUS[0]}
-  $had_errexit && set -e
+  restore_errexit_state "$errexit_state"
   STATUS=$([ "$EXIT" -eq 0 ] && echo "completed" || echo "failed")
   meta_set "$META" status "$STATUS"
   meta_set_int "$META" exit_code "$EXIT"

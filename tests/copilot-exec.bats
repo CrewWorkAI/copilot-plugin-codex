@@ -27,6 +27,10 @@ teardown() {
   rm -rf "$TEST_HOME" "$STUB_DIR"
 }
 
+# Keep this in sync with the external commands used by scripts/copilot-exec.sh
+# in the jq-free rescue/status path.
+NOJQ_COMMANDS=(bash cat date mkdir mktemp mv python3 tee)
+
 # ---- routing ---------------------------------------------------------------
 
 @test "rejects unknown command type" {
@@ -193,7 +197,7 @@ STUB
 
 @test "status falls back to python3 when jq is unavailable" {
   nojq_dir="$(mktemp -d)"
-  for cmd in bash cat date mkdir mktemp mv python3 tee; do
+  for cmd in "${NOJQ_COMMANDS[@]}"; do
     ln -s "$(command -v "$cmd")" "$nojq_dir/$cmd"
   done
   cp "$STUB_DIR/copilot" "$nojq_dir/copilot"
@@ -214,6 +218,12 @@ STUB
 
 @test "rejects invalid caller-supplied job ids" {
   run bash "$EXEC" rescue "hi" --job-id ../escape
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Invalid job id"* ]]
+}
+
+@test "rejects hidden caller-supplied job ids" {
+  run bash "$EXEC" rescue "hi" --job-id .hidden
   [ "$status" -eq 2 ]
   [[ "$output" == *"Invalid job id"* ]]
 }
