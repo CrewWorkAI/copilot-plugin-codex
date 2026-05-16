@@ -1,0 +1,7 @@
+{
+  "name": "copilot-plugin-codex",
+  "version": "0.1.0",
+  "description": "Use GitHub Copilot CLI from Codex for code review, rescue, and tracked background workflows. Mirrors the shape of openai/codex-plugin-cc and sendbird/cc-plugin-codex, with Copilot as the worker.",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

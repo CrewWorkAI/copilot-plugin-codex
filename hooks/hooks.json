@@ -1,0 +1,4 @@
+{
+  "_comment": "Optional review gate. Disabled by default. Enable by setting features.codex_hooks = true in ~/.codex/config.toml and uncommenting the hook below. When enabled, every time the host Codex session stops, Copilot reviews the diff and blocks the stop if issues are found.",
+  "hooks": []
+}
