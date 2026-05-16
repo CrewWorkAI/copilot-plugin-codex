@@ -85,6 +85,7 @@ require_valid_job_id() {
 }
 
 valid_pid() {
+  # Linux pid_max commonly tops out at 2^22; reject obviously implausible values.
   [[ "$1" =~ ^[1-9][0-9]*$ ]] && (( $1 <= 4194304 ))
 }
 
@@ -351,10 +352,11 @@ EOF
 COPILOT_BIN="${COPILOT_BIN:-copilot}"
 
 if $BACKGROUND; then
-  ( set +e
+  ( errexit_state=$-
+    set +e
     "$COPILOT_BIN" "${COPILOT_ARGS[@]}" > "$TRANSCRIPT" 2>&1
     EXIT=$?
-    set -e
+    [[ "$errexit_state" == *e* ]] && set -e
     STATUS=$([ $EXIT -eq 0 ] && echo "completed" || echo "failed")
     meta_set "$META" status "$STATUS"
     meta_set_int "$META" exit_code "$EXIT"
@@ -365,10 +367,11 @@ if $BACKGROUND; then
   echo "Watch: status $JOB_ID  |  Output: result $JOB_ID"
   exit 0
 else
+  errexit_state=$-
   set +e
   "$COPILOT_BIN" "${COPILOT_ARGS[@]}" 2>&1 | tee "$TRANSCRIPT"
   EXIT=${PIPESTATUS[0]}
-  set -e
+  [[ "$errexit_state" == *e* ]] && set -e
   STATUS=$([ "$EXIT" -eq 0 ] && echo "completed" || echo "failed")
   meta_set "$META" status "$STATUS"
   meta_set_int "$META" exit_code "$EXIT"
