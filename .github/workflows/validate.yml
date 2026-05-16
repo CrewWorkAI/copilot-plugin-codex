@@ -14,7 +14,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Run validator
+      - name: Install bats and shellcheck
         run: |
-          chmod +x scripts/validate.sh
+          sudo apt-get update
+          sudo apt-get install -y bats shellcheck jq
+      - name: Run validator (layout + JSON + shellcheck + bats)
+        run: |
+          chmod +x scripts/*.sh
           bash scripts/validate.sh

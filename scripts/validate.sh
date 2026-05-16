@@ -4,8 +4,10 @@
 # Verifies:
 #   - Required manifests at expected paths
 #   - All JSON parses
-#   - At least one SKILL.md under skills/
-#   - Marketplace catalogs point at the repo root
+#   - At least one SKILL.md under skills/, one per documented command
+#   - Bash scripts parse
+#   - Shellcheck clean (if installed)
+#   - Bats tests pass (if installed)
 
 set -euo pipefail
 
@@ -15,6 +17,7 @@ cd "$REPO_ROOT"
 fail=0
 fail() { echo "  ✗ $1" >&2; fail=1; }
 pass() { echo "  ✓ $1"; }
+note() { echo "  · $1"; }
 
 echo "==> Required files"
 for f in \
@@ -23,7 +26,8 @@ for f in \
   .claude-plugin/marketplace.json \
   .agents/plugins/marketplace.json \
   README.md \
-  LICENSE
+  LICENSE \
+  NOTICE
 do
   if [ -f "$f" ]; then
     pass "$f"
@@ -50,12 +54,24 @@ do
 done
 
 echo
-echo "==> At least one SKILL.md"
-if find skills -name SKILL.md 2>/dev/null | grep -q .; then
-  pass "$(find skills -name SKILL.md | head -1)"
-else
-  fail "no SKILL.md found under skills/"
-fi
+echo "==> One SKILL.md per command"
+for skill in setup review adversarial-review rescue status result cancel; do
+  if [ -f "skills/$skill/SKILL.md" ]; then
+    pass "skills/$skill/SKILL.md"
+  else
+    fail "skills/$skill/SKILL.md missing"
+  fi
+done
+
+echo
+echo "==> One command file per command (Claude Code)"
+for cmd in setup review adversarial-review rescue status result cancel; do
+  if [ -f "commands/copilot-$cmd.md" ]; then
+    pass "commands/copilot-$cmd.md"
+  else
+    fail "commands/copilot-$cmd.md missing"
+  fi
+done
 
 echo
 echo "==> Bash scripts parse"
@@ -68,10 +84,38 @@ for f in scripts/*.sh; do
 done
 
 echo
+echo "==> Shellcheck"
+if command -v shellcheck >/dev/null 2>&1; then
+  if shellcheck scripts/*.sh; then
+    pass "all scripts clean"
+  else
+    fail "shellcheck reported issues"
+  fi
+else
+  note "shellcheck not installed — skipping"
+fi
+
+echo
+echo "==> Bats tests"
+if command -v bats >/dev/null 2>&1; then
+  if [ -d tests ] && find tests -name '*.bats' | grep -q .; then
+    if bats tests/; then
+      pass "tests pass"
+    else
+      fail "bats tests failed"
+    fi
+  else
+    note "no tests/*.bats found"
+  fi
+else
+  note "bats not installed — skipping"
+fi
+
+echo
 if [ $fail -eq 0 ]; then
-  echo "✅ All checks passed."
+  echo "All checks passed."
   exit 0
 else
-  echo "❌ Validation failed." >&2
+  echo "Validation failed." >&2
   exit 1
 fi

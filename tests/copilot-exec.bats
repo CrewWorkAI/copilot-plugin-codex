@@ -1,0 +1,190 @@
+#!/usr/bin/env bats
+# Tests for scripts/copilot-exec.sh — exercise the arg-parsing and command-routing
+# paths without actually calling Copilot CLI. A stub `copilot` is dropped on PATH
+# that echoes its argv to stdout, so we can assert on the args the wrapper built.
+
+setup() {
+  REPO_ROOT="$(cd "${BATS_TEST_DIRNAME}/.." && pwd)"
+  EXEC="${REPO_ROOT}/scripts/copilot-exec.sh"
+
+  TEST_HOME="$(mktemp -d)"
+  STUB_DIR="$(mktemp -d)"
+
+  cat > "$STUB_DIR/copilot" <<'STUB'
+#!/usr/bin/env bash
+# Print args one per line so tests can grep them deterministically.
+printf 'COPILOT_ARGV:\n'
+for a in "$@"; do printf '  %s\n' "$a"; done
+STUB
+  chmod +x "$STUB_DIR/copilot"
+
+  export PATH="$STUB_DIR:$PATH"
+  export ORCHESTRA_HOME="$TEST_HOME/orchestra"
+  export HOST=claude
+}
+
+teardown() {
+  rm -rf "$TEST_HOME" "$STUB_DIR"
+}
+
+# ---- routing ---------------------------------------------------------------
+
+@test "rejects unknown command type" {
+  run bash "$EXEC" frobnicate "prompt"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Unknown command type"* ]]
+}
+
+@test "rescue requires a non-empty prompt" {
+  run bash "$EXEC" rescue ""
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"rescue requires a prompt"* ]]
+}
+
+@test "rejects unknown flag" {
+  run bash "$EXEC" review "" --bogus value
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Unknown flag"* ]]
+}
+
+@test "rejects unknown HOST" {
+  HOST=mystery run bash "$EXEC" setup
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Unknown HOST"* ]]
+}
+
+# ---- setup -----------------------------------------------------------------
+
+@test "setup succeeds when copilot stub exists" {
+  run bash "$EXEC" setup
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Host: claude"* ]]
+}
+
+@test "setup fails when copilot missing" {
+  saved="$PATH"
+  # Strip everywhere a real or stubbed copilot binary might live, but keep
+  # /bin and /usr/bin so bash/date/jq stay reachable.
+  filtered="$(printf '%s' "$PATH" | tr ':' '\n' \
+    | grep -v -F "$STUB_DIR" \
+    | grep -v -E '(node|copilot|nvm|\.bin)' \
+    | paste -sd: -)"
+  PATH="$filtered"
+  run bash "$EXEC" setup
+  PATH="$saved"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"not installed"* ]]
+}
+
+# ---- argv building ---------------------------------------------------------
+
+@test "review builds /review prompt with default base=main and shell(git:*) allow" {
+  run bash "$EXEC" review ""
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"compared to main"* ]]
+  [[ "$output" == *"--allow-tool=shell(git:*)"* ]]
+  [[ "$output" == *"-s"* ]]
+}
+
+@test "review honors --base" {
+  run bash "$EXEC" review "" --base release/2026.05
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"compared to release/2026.05"* ]]
+}
+
+@test "adversarial-review uses hostile framing" {
+  run bash "$EXEC" adversarial-review ""
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"adversarial reviewer"* ]]
+}
+
+@test "rescue passes prompt and tool-permission flags" {
+  run bash "$EXEC" rescue "refactor the auth handler"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"refactor the auth handler"* ]]
+  [[ "$output" == *"--allow-all-tools"* ]]
+  [[ "$output" == *"--output-format=json"* ]]
+}
+
+@test "--model is forwarded" {
+  run bash "$EXEC" rescue "do a thing" --model gpt-5.3-codex
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--model"* ]]
+  [[ "$output" == *"gpt-5.3-codex"* ]]
+}
+
+@test "--continue is forwarded" {
+  run bash "$EXEC" rescue "continue something" --continue
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--continue"* ]]
+}
+
+@test "--resume is forwarded with its value" {
+  run bash "$EXEC" rescue "resume something" --resume abc123
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"--resume"* ]]
+  [[ "$output" == *"abc123"* ]]
+}
+
+# ---- job tracking ----------------------------------------------------------
+
+@test "foreground run writes meta + transcript with completed status" {
+  run bash "$EXEC" rescue "hi" --job-id myjob
+  [ "$status" -eq 0 ]
+  [ -f "$ORCHESTRA_HOME/jobs/myjob.meta.json" ]
+  [ -f "$ORCHESTRA_HOME/jobs/myjob.jsonl" ]
+  status=$(jq -r .status "$ORCHESTRA_HOME/jobs/myjob.meta.json")
+  [ "$status" = "completed" ]
+}
+
+@test "background run prints job id and stores PID" {
+  run bash "$EXEC" rescue "long task" --background --job-id bgjob
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"bgjob"* ]]
+  # Give the backgrounded subshell a moment to update metadata.
+  for _ in 1 2 3 4 5; do
+    sleep 0.2
+    pid=$(jq -r '.pid // empty' "$ORCHESTRA_HOME/jobs/bgjob.meta.json" 2>/dev/null || echo "")
+    [ -n "$pid" ] && break
+  done
+  [ -n "$pid" ]
+}
+
+# ---- status / result / cancel ---------------------------------------------
+
+@test "status with no jobs prints an explicit empty message" {
+  run bash "$EXEC" status
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No tracked jobs"* ]]
+}
+
+@test "status lists jobs from current cwd by default" {
+  bash "$EXEC" rescue "first" --job-id j1 >/dev/null
+  run bash "$EXEC" status
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"j1"* ]]
+}
+
+@test "result fails when transcript missing" {
+  run bash "$EXEC" result nonesuch
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"No transcript"* ]]
+}
+
+@test "result prints transcript when present" {
+  bash "$EXEC" rescue "two" --job-id j2 >/dev/null
+  run bash "$EXEC" result j2
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"COPILOT_ARGV"* ]]
+}
+
+@test "cancel marks an unknown PID's job as cancelled" {
+  bash "$EXEC" rescue "three" --job-id j3 >/dev/null
+  # Manually set a bogus PID so cancel exercises the "already gone" path.
+  meta="$ORCHESTRA_HOME/jobs/j3.meta.json"
+  jq '.pid = 999999 | .status = "running"' "$meta" > "$meta.tmp" && mv "$meta.tmp" "$meta"
+  run bash "$EXEC" cancel j3
+  [ "$status" -eq 0 ]
+  status=$(jq -r .status "$meta")
+  [ "$status" = "cancelled" ]
+}

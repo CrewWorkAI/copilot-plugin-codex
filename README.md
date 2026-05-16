@@ -2,6 +2,8 @@
 
 Delegate work from **Codex** or **Claude Code** to **GitHub Copilot CLI**.
 
+A modified fork of [`sendbird/cc-plugin-codex`](https://github.com/sendbird/cc-plugin-codex), retargeted at GitHub Copilot CLI as the worker and extended to support both Codex and Claude Code as hosts from a single codebase. Layout, command surface, and the per-command skill structure are inherited from the upstream; the wrapper script, manifests, and skill bodies are rewritten for Copilot. See [`NOTICE`](./NOTICE) for full attribution.
+
 Companion to the existing cross-CLI delegation plugins:
 
 | Plugin | Host | Worker |
@@ -100,4 +102,4 @@ Alpha. Manifests, scripts, and slash commands are wired up and `bash scripts/val
 
 ## License
 
-MIT. See [`LICENSE`](./LICENSE).
+MIT for original contributions. See [`LICENSE`](./LICENSE). Portions derived from `sendbird/cc-plugin-codex` (Apache 2.0) and, transitively, `openai/codex-plugin-cc` (Apache 2.0) — see [`NOTICE`](./NOTICE).
