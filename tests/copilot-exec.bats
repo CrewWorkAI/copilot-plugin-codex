@@ -137,6 +137,25 @@ teardown() {
   [ "$status" = "completed" ]
 }
 
+@test "foreground failure still records failed metadata and stderr transcript" {
+  cat > "$STUB_DIR/copilot" <<'STUB'
+#!/usr/bin/env bash
+echo "stdout line"
+echo "stderr line" >&2
+exit 7
+STUB
+  chmod +x "$STUB_DIR/copilot"
+
+  run bash "$EXEC" rescue "boom" --job-id failjob
+  [ "$status" -eq 7 ]
+  meta="$ORCHESTRA_HOME/jobs/failjob.meta.json"
+  [ "$(jq -r .status "$meta")" = "failed" ]
+  [ "$(jq -r .exit_code "$meta")" = "7" ]
+  transcript="$ORCHESTRA_HOME/jobs/failjob.jsonl"
+  [[ "$(cat "$transcript")" == *"stdout line"* ]]
+  [[ "$(cat "$transcript")" == *"stderr line"* ]]
+}
+
 @test "background run prints job id and stores PID" {
   run bash "$EXEC" rescue "long task" --background --job-id bgjob
   [ "$status" -eq 0 ]
@@ -165,10 +184,23 @@ teardown() {
   [[ "$output" == *"j1"* ]]
 }
 
+@test "status accepts --wait before job id" {
+  bash "$EXEC" rescue "first" --job-id waitjob >/dev/null
+  run bash "$EXEC" status --wait waitjob
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"waitjob"* ]]
+}
+
 @test "result fails when transcript missing" {
   run bash "$EXEC" result nonesuch
   [ "$status" -eq 1 ]
   [[ "$output" == *"No transcript"* ]]
+}
+
+@test "rejects invalid caller-supplied job ids" {
+  run bash "$EXEC" rescue "hi" --job-id ../escape
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Invalid job id"* ]]
 }
 
 @test "result prints transcript when present" {
@@ -187,4 +219,13 @@ teardown() {
   [ "$status" -eq 0 ]
   status=$(jq -r .status "$meta")
   [ "$status" = "cancelled" ]
+}
+
+@test "cancel rejects invalid pid metadata" {
+  bash "$EXEC" rescue "three" --job-id j4 >/dev/null
+  meta="$ORCHESTRA_HOME/jobs/j4.meta.json"
+  jq '.pid = -1 | .status = "running"' "$meta" > "$meta.tmp" && mv "$meta.tmp" "$meta"
+  run bash "$EXEC" cancel j4
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Invalid PID"* ]]
 }

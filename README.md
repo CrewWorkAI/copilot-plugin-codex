@@ -51,7 +51,9 @@ Then:
 ## Prerequisites
 
 - Node.js 18+
-- GitHub Copilot CLI: `npm install -g @github/copilot` (run `$copilot:setup` to verify or install)
+- Python 3 (required by `scripts/validate.sh` and used as a JSON fallback by the runtime wrapper)
+- `jq` recommended for job metadata reads; without it, the runtime wrapper falls back to Python 3
+- GitHub Copilot CLI: `npm install -g @github/copilot` (run `$copilot:setup` to verify or get install instructions)
 - A GitHub Copilot subscription (Pro, Pro+, Business, or Enterprise)
 - `gh auth login` completed at least once
 

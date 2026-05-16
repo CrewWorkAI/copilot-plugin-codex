@@ -18,7 +18,7 @@ Behavior:
 - No args → table of all jobs whose `cwd` matches the current directory.
 - `--all` → include jobs from sibling sessions in other working directories.
 - `<job-id>` → dump that one job's full metadata JSON.
-- `--wait <job-id>` → poll every 2s until the job leaves `running` (10-minute cap; exit 124 on timeout).
+- `<job-id> --wait` or `--wait <job-id>` → poll every 2s until the job leaves `running` (10-minute cap; exit 124 on timeout).
 
 ## Output handling
 

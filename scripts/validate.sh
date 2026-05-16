@@ -19,6 +19,11 @@ fail() { echo "  ✗ $1" >&2; fail=1; }
 pass() { echo "  ✓ $1"; }
 note() { echo "  · $1"; }
 
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: python3 is required to validate JSON files. Install Python 3 and re-run scripts/validate.sh." >&2
+  exit 1
+fi
+
 echo "==> Required files"
 for f in \
   .codex-plugin/plugin.json \

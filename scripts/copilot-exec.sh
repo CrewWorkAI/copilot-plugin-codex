@@ -45,6 +45,48 @@ mkdir -p "$JOBS_DIR"
 # -- helpers ----------------------------------------------------------------
 
 have_jq() { command -v jq >/dev/null 2>&1; }
+have_python() { command -v python3 >/dev/null 2>&1; }
+
+need_json_runtime() {
+  if ! have_jq && ! have_python; then
+    echo "ERROR: jq or python3 is required for job metadata handling." >&2
+    exit 1
+  fi
+}
+
+meta_get() {
+  local file="$1" key="$2" default="${3:-}"
+  if have_jq; then
+    jq -r --arg k "$key" --arg d "$default" '.[$k] // $d' "$file"
+  else
+    python3 - "$file" "$key" "$default" <<'PY'
+import json, sys
+path, key, default = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(path) as f:
+    data = json.load(f)
+value = data.get(key, default)
+if value is None:
+    value = default
+print(value)
+PY
+  fi
+}
+
+valid_job_id() {
+  [[ "$1" =~ ^[A-Za-z0-9._-]+$ ]]
+}
+
+require_valid_job_id() {
+  local job_id="$1" label="$2"
+  if ! valid_job_id "$job_id"; then
+    echo "Invalid ${label}: $job_id" >&2
+    exit 2
+  fi
+}
+
+valid_pid() {
+  [[ "$1" =~ ^[1-9][0-9]*$ ]]
+}
 
 # Atomically patch a JSON metadata file. Falls back to python3 if jq is absent.
 meta_set() {
@@ -129,9 +171,24 @@ while [ $# -gt 0 ]; do
     --all)        ALL=true; shift ;;
     --wait)       WAIT=true; shift ;;
     --)           shift; break ;;
-    *) echo "Unknown flag: $1" >&2; exit 2 ;;
+    *)
+      case "$CMD_TYPE" in
+        status|result|cancel)
+          if [ -z "${JOB_ARG:-}" ] && [[ "$1" != -* ]]; then
+            JOB_ARG="$1"
+            shift
+            continue
+          fi
+          ;;
+      esac
+      echo "Unknown flag: $1" >&2
+      exit 2
+      ;;
   esac
 done
+
+[ -n "$JOB_ID" ] && require_valid_job_id "$JOB_ID" "job id"
+[ -n "${JOB_ARG:-}" ] && require_valid_job_id "$JOB_ARG" "job id"
 
 # -- setup ------------------------------------------------------------------
 
@@ -160,6 +217,7 @@ fi
 # -- status -----------------------------------------------------------------
 
 if [ "$CMD_TYPE" = "status" ]; then
+  need_json_runtime
   shopt -s nullglob
   metas=("$JOBS_DIR"/*.meta.json)
   shopt -u nullglob
@@ -175,7 +233,7 @@ if [ "$CMD_TYPE" = "status" ]; then
     if $WAIT; then
       deadline=$(( $(date +%s) + 600 ))
       while :; do
-        st=$(jq -r .status "$f" 2>/dev/null || echo "")
+        st=$(meta_get "$f" status)
         case "$st" in
           running) ;;
           *) cat "$f"; exit 0 ;;
@@ -190,13 +248,13 @@ if [ "$CMD_TYPE" = "status" ]; then
 
   printf "%-28s %-22s %-10s %-22s %s\n" "JOB" "TYPE" "STATUS" "STARTED" "MODEL"
   for f in "${metas[@]}"; do
-    cwd=$(jq -r .cwd "$f")
+    cwd=$(meta_get "$f" cwd)
     if ! $ALL && [ "$cwd" != "$filter_cwd" ]; then continue; fi
-    id=$(jq -r .job_id "$f")
-    ty=$(jq -r .type "$f")
-    st=$(jq -r .status "$f")
-    sa=$(jq -r .started_at "$f")
-    md=$(jq -r .model "$f")
+    id=$(meta_get "$f" job_id)
+    ty=$(meta_get "$f" type)
+    st=$(meta_get "$f" status)
+    sa=$(meta_get "$f" started_at)
+    md=$(meta_get "$f" model)
     printf "%-28s %-22s %-10s %-22s %s\n" "$id" "$ty" "$st" "$sa" "$md"
   done
   exit 0
@@ -215,10 +273,15 @@ fi
 # -- cancel -----------------------------------------------------------------
 
 if [ "$CMD_TYPE" = "cancel" ]; then
+  need_json_runtime
   [ -n "$JOB_ARG" ] || { echo "Usage: cancel <job-id>" >&2; exit 2; }
   m="$JOBS_DIR/$JOB_ARG.meta.json"
   [ -f "$m" ] || { echo "No such job: $JOB_ARG" >&2; exit 1; }
-  pid=$(jq -r '.pid // empty' "$m")
+  pid=$(meta_get "$m" pid)
+  if [ -n "$pid" ] && ! valid_pid "$pid"; then
+    echo "Invalid PID in metadata for $JOB_ARG: $pid" >&2
+    exit 1
+  fi
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
     kill -TERM "$pid" && echo "Sent SIGTERM to $pid"
   else
@@ -262,9 +325,12 @@ $CONTINUE        && COPILOT_ARGS+=(--continue)
 
 # -- run --------------------------------------------------------------------
 
+need_json_runtime
+
 if [ -z "$JOB_ID" ]; then
   JOB_ID="job-$(date +%s)-$$"
 fi
+require_valid_job_id "$JOB_ID" "job id"
 TRANSCRIPT="$JOBS_DIR/$JOB_ID.jsonl"
 META="$JOBS_DIR/$JOB_ID.meta.json"
 
@@ -285,8 +351,10 @@ EOF
 COPILOT_BIN="${COPILOT_BIN:-copilot}"
 
 if $BACKGROUND; then
-  ( "$COPILOT_BIN" "${COPILOT_ARGS[@]}" > "$TRANSCRIPT" 2>&1
+  ( set +e
+    "$COPILOT_BIN" "${COPILOT_ARGS[@]}" > "$TRANSCRIPT" 2>&1
     EXIT=$?
+    set -e
     STATUS=$([ $EXIT -eq 0 ] && echo "completed" || echo "failed")
     meta_set "$META" status "$STATUS"
     meta_set_int "$META" exit_code "$EXIT"
@@ -297,8 +365,10 @@ if $BACKGROUND; then
   echo "Watch: status $JOB_ID  |  Output: result $JOB_ID"
   exit 0
 else
-  "$COPILOT_BIN" "${COPILOT_ARGS[@]}" | tee "$TRANSCRIPT"
+  set +e
+  "$COPILOT_BIN" "${COPILOT_ARGS[@]}" 2>&1 | tee "$TRANSCRIPT"
   EXIT=${PIPESTATUS[0]}
+  set -e
   STATUS=$([ "$EXIT" -eq 0 ] && echo "completed" || echo "failed")
   meta_set "$META" status "$STATUS"
   meta_set_int "$META" exit_code "$EXIT"

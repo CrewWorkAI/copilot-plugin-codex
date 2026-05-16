@@ -27,6 +27,6 @@ Always surface the Copilot session id (visible in the JSONL or transcript header
 
 ## Edge cases
 
-- Job still running → tell the user, point them at `$copilot:status --wait <job-id>` rather than showing a partial transcript.
+- Job still running → tell the user, point them at `$copilot:status <job-id> --wait` rather than showing a partial transcript.
 - Transcript missing → could mean the job was cancelled before any output was emitted; check status metadata.
 - Job failed → still show the captured output; the failure mode is usually visible in the last few lines.
