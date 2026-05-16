@@ -40,6 +40,7 @@ case "$HOST" in
 esac
 ORCHESTRA_HOME="${ORCHESTRA_HOME:-$DEFAULT_HOME}"
 JOBS_DIR="$ORCHESTRA_HOME/jobs"
+# Typical Linux pid_max ceiling (2^22); used as a conservative upper bound.
 MAX_PID=4194304
 STATUS_WAIT_TIMEOUT=600
 mkdir -p "$JOBS_DIR"
@@ -87,6 +88,7 @@ require_valid_job_id() {
 }
 
 valid_pid() {
+  [ -n "$1" ] || return 1
   # Linux pid_max commonly tops out at 2^22; reject obviously implausible values.
   [[ "$1" =~ ^[1-9][0-9]*$ ]] && (( $1 <= MAX_PID ))
 }

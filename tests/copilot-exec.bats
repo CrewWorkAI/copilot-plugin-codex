@@ -191,6 +191,21 @@ STUB
   [[ "$output" == *"waitjob"* ]]
 }
 
+@test "status falls back to python3 when jq is unavailable" {
+  nojq_dir="$(mktemp -d)"
+  for cmd in bash cat date mkdir mktemp mv python3 tee; do
+    ln -s "$(command -v "$cmd")" "$nojq_dir/$cmd"
+  done
+  cp "$STUB_DIR/copilot" "$nojq_dir/copilot"
+
+  PATH="$nojq_dir" bash "$EXEC" rescue "python fallback" --job-id pyjob >/dev/null
+  run env PATH="$nojq_dir" bash "$EXEC" status pyjob
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"\"job_id\": \"pyjob\""* ]]
+
+  rm -rf "$nojq_dir"
+}
+
 @test "result fails when transcript missing" {
   run bash "$EXEC" result nonesuch
   [ "$status" -eq 1 ]
