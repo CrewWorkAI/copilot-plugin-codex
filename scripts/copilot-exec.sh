@@ -89,6 +89,10 @@ valid_pid() {
   [[ "$1" =~ ^[1-9][0-9]*$ ]] && (( $1 <= 4194304 ))
 }
 
+errexit_is_on() {
+  shopt -qo errexit
+}
+
 # Atomically patch a JSON metadata file. Falls back to python3 if jq is absent.
 meta_set() {
   local file="$1" key="$2" value="$3"
@@ -352,11 +356,12 @@ EOF
 COPILOT_BIN="${COPILOT_BIN:-copilot}"
 
 if $BACKGROUND; then
-  ( errexit_state=$-
+  ( had_errexit=false
+    errexit_is_on && had_errexit=true
     set +e
     "$COPILOT_BIN" "${COPILOT_ARGS[@]}" > "$TRANSCRIPT" 2>&1
     EXIT=$?
-    [[ "$errexit_state" == *e* ]] && set -e
+    $had_errexit && set -e
     STATUS=$([ $EXIT -eq 0 ] && echo "completed" || echo "failed")
     meta_set "$META" status "$STATUS"
     meta_set_int "$META" exit_code "$EXIT"
@@ -367,11 +372,12 @@ if $BACKGROUND; then
   echo "Watch: status $JOB_ID  |  Output: result $JOB_ID"
   exit 0
 else
-  errexit_state=$-
+  had_errexit=false
+  errexit_is_on && had_errexit=true
   set +e
   "$COPILOT_BIN" "${COPILOT_ARGS[@]}" 2>&1 | tee "$TRANSCRIPT"
   EXIT=${PIPESTATUS[0]}
-  [[ "$errexit_state" == *e* ]] && set -e
+  $had_errexit && set -e
   STATUS=$([ "$EXIT" -eq 0 ] && echo "completed" || echo "failed")
   meta_set "$META" status "$STATUS"
   meta_set_int "$META" exit_code "$EXIT"
