@@ -165,6 +165,8 @@ else
   pass "Codex docs avoid removed 'codex plugin install' command"
 fi
 
+# Search for a literal $PLUGIN_ROOT reference in docs.
+# shellcheck disable=SC2016
 if find "$PLUGIN_DIR/skills" -name 'SKILL.md' -print0 | xargs -0 grep -E '\$\{PLUGIN_ROOT\}|\$PLUGIN_ROOT' >/dev/null 2>&1; then
   fail "skills still rely on undefined PLUGIN_ROOT shell variable"
 else
