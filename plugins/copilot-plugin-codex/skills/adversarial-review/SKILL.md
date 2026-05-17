@@ -1,11 +1,11 @@
 ---
 name: adversarial-review
-description: Use when the user asks Copilot for a harsh review, red-team pass, challenged assumptions, or a sharper critique than `$copilot:review`.
+description: Use when the user asks Copilot for a harsh review, red-team pass, challenged assumptions, or a sharper critique than the standard review skill.
 ---
 
-# `$copilot:adversarial-review` — hostile-reviewer framing
+# `$copilot-plugin-codex adversarial-review` / `/copilot:adversarial-review` — hostile-reviewer framing
 
-Same surface as `$copilot:review`, but the prompt instructs Copilot to behave as an adversarial reviewer: unchecked edge cases, hidden coupling, premature abstractions, security blind spots, happy-path optimism.
+Same surface as the standard review skill, but the prompt instructs Copilot to behave as an adversarial reviewer: unchecked edge cases, hidden coupling, premature abstractions, security blind spots, happy-path optimism.
 
 ## Invocation
 

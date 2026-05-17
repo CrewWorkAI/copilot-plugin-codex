@@ -3,7 +3,7 @@ name: review
 description: Use when the user asks Copilot to review this branch, check the diff, or provide a second opinion. Do not trigger for hostile-framed review requests.
 ---
 
-# `$copilot:review` — Copilot review on the current branch
+# `$copilot-plugin-codex review` / `/copilot:review` — Copilot review on the current branch
 
 Asks Copilot CLI in non-interactive mode to review the current branch vs a base ref (default `main`).
 
@@ -18,7 +18,7 @@ Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed 
 Flags:
 
 - `--base <ref>` — compare against this ref instead of `main`
-- `--model <model>` — override Copilot's default (Claude Sonnet 4.5 as of CLI 1.0.x)
+- `--model <model>` — override Copilot's current default
 - `--background` — fire and forget; print job id
 - `--job-id <id>` — caller-supplied id
 

@@ -261,7 +261,7 @@ ERROR: GitHub Copilot CLI is not installed.
 Install with:
   npm install -g @github/copilot
 
-Then authenticate by running \`copilot\` once interactively in a trusted directory.
+Then authenticate with \`copilot login\`, or set COPILOT_GITHUB_TOKEN, GH_TOKEN, or GITHUB_TOKEN.
 EOF
     exit 1
   fi

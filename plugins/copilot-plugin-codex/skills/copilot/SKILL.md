@@ -1,23 +1,23 @@
 ---
 name: copilot
-description: Use when the user mentions Copilot CLI generically, asks to delegate to Copilot, or asks for a Copilot second opinion without naming a specific `$copilot:<command>`.
+description: Use when the user mentions Copilot CLI generically, asks to delegate to Copilot, or asks for a Copilot second opinion without naming a specific copilot-plugin-codex skill.
 ---
 
 # Copilot delegation — router
 
-This is the umbrella skill for delegating work from the host agent (Codex or Claude Code) to GitHub Copilot CLI. Each `$copilot:<command>` has its own sub-skill at `skills/<command>/SKILL.md`. This file routes free-form requests to the right one.
+This is the umbrella skill for delegating work from the host agent (Codex or Claude Code) to GitHub Copilot CLI. Each command has its own sub-skill at `skills/<command>/SKILL.md`. Codex exposes them as `$copilot-plugin-codex <skill>`; Claude Code exposes them as `/copilot:<command>`. This file routes free-form requests to the right one.
 
 ## Sub-skills
 
-| Skill | Slash command | Purpose |
-|---|---|---|
-| [`setup`](../setup/SKILL.md) | `$copilot:setup` / `/copilot:setup` | Verify CLI install + auth |
-| [`review`](../review/SKILL.md) | `$copilot:review` / `/copilot:review` | Copilot review on the branch |
-| [`adversarial-review`](../adversarial-review/SKILL.md) | `$copilot:adversarial-review` | Hostile-framed review |
-| [`rescue`](../rescue/SKILL.md) | `$copilot:rescue <task>` | Arbitrary task delegation |
-| [`status`](../status/SKILL.md) | `$copilot:status [job-id]` | List/inspect tracked jobs |
-| [`result`](../result/SKILL.md) | `$copilot:result <job-id>` | Print final transcript |
-| [`cancel`](../cancel/SKILL.md) | `$copilot:cancel <job-id>` | Terminate a background job |
+| Skill | Codex | Claude Code | Purpose |
+|---|---|---|---|
+| [`setup`](../setup/SKILL.md) | `$copilot-plugin-codex setup` | `/copilot:setup` | Verify CLI install + auth |
+| [`review`](../review/SKILL.md) | `$copilot-plugin-codex review` | `/copilot:review` | Copilot review on the branch |
+| [`adversarial-review`](../adversarial-review/SKILL.md) | `$copilot-plugin-codex adversarial-review` | `/copilot:adversarial-review` | Hostile-framed review |
+| [`rescue`](../rescue/SKILL.md) | `$copilot-plugin-codex rescue <task>` | `/copilot:rescue <task>` | Arbitrary task delegation |
+| [`status`](../status/SKILL.md) | `$copilot-plugin-codex status [job-id]` | `/copilot:status [job-id]` | List/inspect tracked jobs |
+| [`result`](../result/SKILL.md) | `$copilot-plugin-codex result <job-id>` | `/copilot:result <job-id>` | Print final transcript |
+| [`cancel`](../cancel/SKILL.md) | `$copilot-plugin-codex cancel <job-id>` | `/copilot:cancel <job-id>` | Terminate a background job |
 
 ## Routing rules
 
@@ -38,11 +38,11 @@ All sub-skills share these properties:
 - They go through `scripts/copilot-exec.sh`, which reads `HOST=codex|claude` to pick the state dir.
 - They never silently retry. Auth, quota, and sandbox errors are surfaced to the user verbatim.
 - Each invocation consumes one Copilot premium request.
-- `-p` mode does not load MCP servers ([github/copilot-cli#633](https://github.com/github/copilot-cli/issues/633)) — sub-skills that need MCP fall back to suggesting an interactive Copilot session.
+- MCP behavior in `-p` mode is CLI-version-dependent. Copilot CLI 1.0.48 loaded the builtin GitHub MCP server during a `rescue` smoke test, but custom/additional MCP server paths are not verified by this plugin yet.
 
 ## Model selection
 
-Copilot's default is Claude Sonnet 4.5. Override with `--model <id>` on any command. Available identifiers depend on the CLI version and the user's subscription; the CLI itself doesn't enforce an enum, so pass whatever model id the user names. The `/model` interactive command in Copilot is the source of truth for what their account can use.
+Copilot's default model can vary by CLI version and account. Override with `--model <id>` on any command. Available identifiers depend on the CLI version and the user's subscription; the CLI itself doesn't enforce an enum, so pass whatever model id the user names. The `/model` interactive command in Copilot is the source of truth for what their account can use.
 
 ## See also
 

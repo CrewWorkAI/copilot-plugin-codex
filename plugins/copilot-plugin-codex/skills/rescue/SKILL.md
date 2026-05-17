@@ -3,7 +3,7 @@ name: rescue
 description: Use when the user asks Copilot to perform a coding task, delegate work, or use a Copilot-only model. Do not trigger for code reviews or host-agent work.
 ---
 
-# `$copilot:rescue <task>` — delegate an arbitrary task to Copilot
+# `$copilot-plugin-codex rescue <task>` / `/copilot:rescue <task>` — delegate an arbitrary task to Copilot
 
 Hand a free-form task to Copilot CLI in non-interactive mode with all tool permissions granted. JSONL transcript is captured for later inspection via `result`.
 
@@ -57,4 +57,4 @@ For background runs: confirm the job started, show the job id, and remind the us
 - `Not authenticated` → trigger `setup`.
 - Sandbox/trust error → tell the user to run `copilot` interactively in this directory once.
 - Quota exhausted → state this and stop. Do not silently retry.
-- MCP-dependent task → Copilot CLI's `-p` mode does not load MCP servers ([github/copilot-cli#633](https://github.com/github/copilot-cli/issues/633)). Surface this and suggest an interactive Copilot session instead.
+- MCP-dependent task → Copilot CLI 1.0.48 loaded the builtin GitHub MCP server in `-p` mode during a smoke test, but custom/additional MCP server paths are not verified by this plugin yet. Surface missing-MCP failures and suggest an interactive Copilot session when needed.

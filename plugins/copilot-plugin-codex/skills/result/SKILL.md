@@ -3,7 +3,7 @@ name: result
 description: Use when the user asks what a tracked Copilot job produced or wants the result transcript for a completed background job.
 ---
 
-# `$copilot:result <job-id>` — fetch the final transcript
+# `$copilot-plugin-codex result <job-id>` / `/copilot:result <job-id>` — fetch the final transcript
 
 Reads `~/.<host>/plugins/copilot-plugin-codex/jobs/<job-id>.jsonl` and prints it.
 
@@ -29,6 +29,6 @@ Always surface the Copilot session id (visible in the JSONL or transcript header
 
 ## Edge cases
 
-- Job still running → tell the user, point them at `$copilot:status <job-id> --wait` rather than showing a partial transcript.
+- Job still running → tell the user, point them at `$copilot-plugin-codex status <job-id> --wait` or `/copilot:status <job-id> --wait` rather than showing a partial transcript.
 - Transcript missing → could mean the job was cancelled before any output was emitted; check status metadata.
 - Job failed → still show the captured output; the failure mode is usually visible in the last few lines.

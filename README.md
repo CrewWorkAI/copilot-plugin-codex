@@ -14,7 +14,7 @@ Companion to the existing cross-CLI delegation plugins:
 
 ## Why Copilot
 
-Copilot CLI is the only major coding agent CLI that lets you switch between Anthropic, OpenAI, and Google models mid-session (Claude Sonnet/Opus/Haiku 4.5–4.6, GPT-5.3-Codex, Gemini 3 Pro). From inside Codex or Claude Code, that turns Copilot into a useful "use the right model for this task" subprocess — including models the host doesn't natively expose.
+Copilot CLI can switch between model providers from the same session, depending on the user's subscription and CLI version. From inside Codex or Claude Code, that turns Copilot into a useful "use the right model for this task" subprocess — including models the host may not natively expose. Use Copilot's interactive `/model` command as the source of truth for the models available to an account.
 
 ## Install
 
@@ -27,9 +27,9 @@ codex plugin marketplace add CrewWorkAI/copilot-plugin-codex
 Current Codex CLI versions register the marketplace through the command above. Then install or enable `copilot-plugin-codex@copilot-plugin-codex` from Codex's plugin marketplace UI and start a new thread:
 
 ```
-$copilot:setup
-$copilot:review
-$copilot:rescue <task description>
+$copilot-plugin-codex setup
+$copilot-plugin-codex review
+$copilot-plugin-codex rescue <task description>
 ```
 
 ### Claude Code
@@ -52,23 +52,23 @@ Then:
 - Node.js 18+
 - Python 3 (required by `scripts/validate.sh` and used as a JSON fallback by the runtime wrapper)
 - `jq` recommended for job metadata reads; without it, the runtime wrapper falls back to Python 3
-- GitHub Copilot CLI: `npm install -g @github/copilot` (run `$copilot:setup` to verify or get install instructions)
+- GitHub Copilot CLI: `npm install -g @github/copilot` (run `$copilot-plugin-codex setup` to verify or get install instructions)
 - A GitHub Copilot subscription (Pro, Pro+, Business, or Enterprise)
-- `gh auth login` completed at least once
+- Authentication via `copilot login`, `COPILOT_GITHUB_TOKEN` / `GH_TOKEN` / `GITHUB_TOKEN`, or `gh auth login`
 
 ## Commands
 
 | Codex | Claude Code | Purpose |
 |---|---|---|
-| `$copilot:setup` | `/copilot:setup` | Verify Copilot CLI install & auth |
-| `$copilot:review` | `/copilot:review` | Copilot review on current branch |
-| `$copilot:adversarial-review` | `/copilot:adversarial-review` | Hostile-reviewer-framed review |
-| `$copilot:rescue <task>` | `/copilot:rescue <task>` | Delegate an arbitrary task |
-| `$copilot:status [job-id]` | `/copilot:status [job-id]` | List/inspect tracked jobs |
-| `$copilot:result <job-id>` | `/copilot:result <job-id>` | Get final output of a job |
-| `$copilot:cancel <job-id>` | `/copilot:cancel <job-id>` | Cancel a background job |
+| `$copilot-plugin-codex setup` | `/copilot:setup` | Verify Copilot CLI install & auth |
+| `$copilot-plugin-codex review` | `/copilot:review` | Copilot review on current branch |
+| `$copilot-plugin-codex adversarial-review` | `/copilot:adversarial-review` | Hostile-reviewer-framed review |
+| `$copilot-plugin-codex rescue <task>` | `/copilot:rescue <task>` | Delegate an arbitrary task |
+| `$copilot-plugin-codex status [job-id]` | `/copilot:status [job-id]` | List/inspect tracked jobs |
+| `$copilot-plugin-codex result <job-id>` | `/copilot:result <job-id>` | Get final output of a job |
+| `$copilot-plugin-codex cancel <job-id>` | `/copilot:cancel <job-id>` | Cancel a background job |
 
-All commands accept `--model <model-id>` to override Copilot's default (currently Claude Sonnet 4.5). Full model list in [`plugins/copilot-plugin-codex/skills/copilot/SKILL.md`](./plugins/copilot-plugin-codex/skills/copilot/SKILL.md).
+All commands accept `--model <model-id>` to override Copilot's current default. The available identifiers depend on the installed Copilot CLI and the user's subscription; run `/model` in an interactive Copilot session for the authoritative list.
 
 ## Architecture
 
@@ -81,7 +81,7 @@ copilot-plugin-codex/
 ├── plugins/copilot-plugin-codex/              ← Shared plugin payload
 │   ├── .codex-plugin/plugin.json              ← Codex reads this
 │   ├── .claude-plugin/plugin.json             ← Claude Code reads this
-│   ├── skills/copilot/SKILL.md                ← Canonical instructions (both hosts read this)
+│   ├── skills/*/SKILL.md                      ← Codex skills
 │   ├── commands/copilot-*.md                  ← Claude Code slash command definitions
 │   ├── hooks/hooks.json                       ← Codex hooks (review gate, disabled by default)
 │   └── scripts/
@@ -94,13 +94,13 @@ copilot-plugin-codex/
 
 ## Known limitations
 
-1. **MCP servers don't run in `copilot -p` mode** ([github/copilot-cli#633](https://github.com/github/copilot-cli/issues/633)). If a delegated task needs MCP tooling, the plugin will surface this and suggest an interactive Copilot session instead.
-2. **Some Copilot features require a Git repository** (notably diff review and remote access). `$copilot:setup` checks for this.
+1. **MCP behavior in `copilot -p` mode is CLI-version-dependent.** Copilot CLI 1.0.48 loaded the builtin GitHub MCP server during a `rescue` smoke test, but custom/additional MCP server behavior is not covered by this wrapper yet. For MCP-heavy tasks, prefer an interactive Copilot session until the specific server path is verified.
+2. **Some Copilot features require a Git repository** (notably diff review and remote access). `$copilot-plugin-codex setup` checks for this.
 3. **Each invocation = one Copilot premium request.** Background loops with the review hook enabled can drain quota fast — the hook is disabled by default.
 
 ## Status
 
-Alpha. Manifests, scripts, and slash commands are wired up and `bash scripts/validate.sh` passes; a local-path Codex marketplace add smoke test passes. End-to-end invocation against real Copilot CLI still needs a downstream Codex/Claude Code smoke test. See [`CLAUDE.md`](./CLAUDE.md) for known gaps and the recommended next-task list.
+Late alpha. Manifests, Codex skills, Claude Code slash commands, and scripts are wired up, and `bash scripts/validate.sh` passes. Codex setup/auth and a wrapper-mediated `rescue` smoke test have passed against GitHub Copilot CLI 1.0.48. Claude Code runtime installation and the real review flow still need downstream smoke tests. See [`CLAUDE.md`](./CLAUDE.md) for known gaps and the recommended next-task list.
 
 ## License
 

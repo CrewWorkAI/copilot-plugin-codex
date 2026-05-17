@@ -3,7 +3,7 @@ name: setup
 description: Use when the user asks to verify Copilot CLI setup, reports `copilot` not found, hits auth errors, or needs first-time plugin setup.
 ---
 
-# `$copilot:setup` — verify GitHub Copilot CLI install + auth
+# `$copilot-plugin-codex setup` / `/copilot:setup` — verify GitHub Copilot CLI install + auth
 
 Runs the install/version/auth check for Copilot CLI. Idempotent.
 
@@ -30,7 +30,7 @@ The CLI binary working ≠ authenticated. To verify auth, run once:
 copilot -p 'Reply with the word OK and nothing else.' -s --allow-all-tools
 ```
 
-If auth is missing, run `copilot` once interactively and complete `gh auth login` (Copilot CLI piggybacks on `gh` credentials).
+If auth is missing, run `copilot login` and complete the device flow. Headless environments can instead set `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `GITHUB_TOKEN`; `gh auth login` is also accepted by Copilot CLI when suitable credentials are available.
 
 ## When it fails
 

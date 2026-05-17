@@ -6,40 +6,40 @@ This is a modified fork of [`sendbird/cc-plugin-codex`](https://github.com/sendb
 
 ## Status
 
-**Late alpha.** Structure, manifests, scripts, per-command skills, slash commands, and a `bats` test suite are in place. `bash scripts/validate.sh` passes (layout + JSON + shellcheck + bats). End-to-end install against a real Copilot CLI install still hasn't been smoke-tested in a downstream host (Codex or Claude Code), but `plugins/copilot-plugin-codex/scripts/copilot-exec.sh` has been validated against Copilot CLI 1.0.48's actual `--help` output, so flag drift is no longer a guessed risk.
+**Late alpha.** Structure, manifests, scripts, per-command Codex skills, Claude Code slash commands, and a `bats` test suite are in place. `bash scripts/validate.sh` passes; `shellcheck` and `bats` run when installed. GitHub Copilot CLI 1.0.48 has been installed/authenticated with `copilot login`, and the Codex path has been smoke-tested in-session with `$copilot-plugin-codex setup` plus a wrapper-mediated `rescue` job (`codex-smoke-rescue`, exit 0, no files modified). Claude Code runtime installation and the real review flow still need downstream smoke tests.
 
 ## Conventions worth knowing before editing
 
 - **Dual-targeted from one codebase.** The root marketplace files (`.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json` for Claude Code) both point at the shared plugin payload in `plugins/copilot-plugin-codex/`. Codex rejects a marketplace entry whose plugin source path is `./`, so keep the non-root plugin directory.
-- **One skill per command.** `plugins/copilot-plugin-codex/skills/{setup,review,adversarial-review,rescue,status,result,cancel}/SKILL.md` — matches the structure used by the upstream `sendbird/cc-plugin-codex` and what Codex expects for `$plugin:command` routing. `plugins/copilot-plugin-codex/skills/copilot/SKILL.md` is a router that handles generic "ask Copilot" requests.
+- **One skill per command.** `plugins/copilot-plugin-codex/skills/{setup,review,adversarial-review,rescue,status,result,cancel}/SKILL.md` — matches what Codex exposes as `$copilot-plugin-codex <skill>`. `plugins/copilot-plugin-codex/skills/copilot/SKILL.md` is a router that handles generic "ask Copilot" requests.
 - **`plugins/copilot-plugin-codex/scripts/copilot-exec.sh` is the single invocation wrapper.** Reads `HOST=codex` or `HOST=claude` from env to pick the right state directory. Also dispatches the `status`, `result`, and `cancel` subcommands directly (no `copilot` call needed for those).
 - **`COPILOT_BIN` env var lets tests stub the binary.** Default is `copilot`. The bats suite at `tests/copilot-exec.bats` uses a stub on PATH that echoes its argv, so we can assert on the wrapper-built command without burning premium requests.
 - **The hooks file ships empty.** `plugins/copilot-plugin-codex/hooks/hooks.json` has the structure but no active hooks. Enabling the review gate is opt-in.
 
 ## What works
 
-- `bash scripts/validate.sh` passes: layout, JSON parse, Codex marketplace path validation, per-command SKILL.md present, per-command Claude Code command file present, `bash -n` clean, `shellcheck` clean, `bats tests/` green.
+- `bash scripts/validate.sh` passes: layout, JSON parse, Codex marketplace path validation, per-command SKILL.md present, per-command Claude Code command file present, and `bash -n` clean. `shellcheck` and `bats tests/` are included in the validator and run when installed.
 - All wrapper flags map 1:1 to actual `copilot --help` output from CLI 1.0.48: `-p`, `-s`, `--allow-tool='shell(git:*)'`, `--allow-all-tools`, `--model`, `--output-format=json`, `--resume`, `--continue`.
 - Job metadata writes are atomic (`jq` to temp file + `mv`); falls back to `python3` if `jq` is unavailable at runtime.
+- Codex setup/auth works with Copilot CLI 1.0.48 via `copilot login`, and a wrapper-mediated `rescue` smoke test completed with zero file changes.
 
 ## What's still untested (in roughly the order it would matter)
 
-1. **End-to-end invocation in a host.** A local-path `codex plugin marketplace add ./` smoke test registers the marketplace with a non-root plugin source path, but `$copilot:*` commands have not been exercised inside a fresh Codex thread and Claude Code install has not been smoke-tested yet.
-2. **Real Copilot review invocation.** The wrapper now uses a normal non-interactive review prompt instead of Copilot's interactive `/review` slash command, but the full flow still needs a real-CLI smoke test.
-3. **`${CLAUDE_PLUGIN_ROOT}` resolution.** The seven `plugins/copilot-plugin-codex/commands/copilot-*.md` files reference `${CLAUDE_PLUGIN_ROOT}/scripts/...`. Needs verification at runtime in a real Claude Code install.
-4. **Codex `$plugin:command` mapping.** Splitting the skill into per-command subdirs matches `sendbird/cc-plugin-codex`'s structure, so this should work, but it still needs a fresh-session check for our specific command names.
+1. **Claude Code install/runtime.** The seven `plugins/copilot-plugin-codex/commands/copilot-*.md` files reference `${CLAUDE_PLUGIN_ROOT}/scripts/...`. Needs verification at runtime in a real Claude Code install.
+2. **Real Copilot review invocation.** The wrapper now uses a normal non-interactive review prompt instead of Copilot's interactive `/review` slash command, but the full review flow still needs a real-CLI smoke test on a branch with changes.
+3. **Custom/additional MCP behavior in `copilot -p`.** Copilot CLI 1.0.48 loaded the builtin GitHub MCP server during a `rescue` smoke test, but custom/additional MCP server paths have not been verified through the wrapper.
 
 ## Known limitations that will not change
 
-- Copilot CLI `-p` mode doesn't support MCP servers ([github/copilot-cli#633](https://github.com/github/copilot-cli/issues/633)). Plugin documents this in every skill that might need MCP and points users at interactive Copilot sessions.
-- Some Copilot features require being inside a git repo. `$copilot:setup` warns about this.
+- Copilot CLI `-p` MCP behavior is version/source dependent. The builtin GitHub MCP server loaded in CLI 1.0.48 during a `rescue` smoke test; custom/additional MCP server behavior remains unverified through this wrapper.
+- Some Copilot features require being inside a git repo. `$copilot-plugin-codex setup` warns about this.
 - Each invocation = one Copilot premium request. Cancellation does not refund it.
 
 ## Remaining nice-to-haves
 
-1. **Real install smoke test.** Install the plugin from a local path into Claude Code (`/plugin marketplace add ./` from the repo root), run `/copilot:setup`, then `/copilot:review` on a small dirty branch. Capture what breaks.
-2. **Same against Codex.** After `codex plugin marketplace add ./`, start a fresh Codex thread and verify `$copilot:review` actually triggers the `review` skill.
-3. **Enable the hook.** `plugins/copilot-plugin-codex/hooks/hooks.json` is currently `[]`. Wire a Stop hook that fires `$copilot:review` post-edit, gated behind an opt-in flag.
+1. **Claude Code smoke test.** Install the plugin from a local path into Claude Code (`/plugin marketplace add ./` from the repo root), run `/copilot:setup`, then `/copilot:review` on a small dirty branch. Capture what breaks.
+2. **Real review smoke test in Codex.** Use `$copilot-plugin-codex review` on a small dirty branch and verify findings/transcript behavior.
+3. **Enable the hook.** `plugins/copilot-plugin-codex/hooks/hooks.json` is currently `[]`. Wire a Stop hook that fires a review post-edit, gated behind an opt-in flag.
 
 ## Future work (not for this iteration)
 
@@ -59,4 +59,4 @@ There's a broader orchestration-marketplace idea — a separate repo (working na
 bash scripts/validate.sh
 ```
 
-Runs JSON parse, layout cross-check, `bash -n`, `shellcheck`, and `bats tests/`. CI runs the same script.
+Runs JSON parse, layout cross-check, `bash -n`, and, when installed, `shellcheck` and `bats tests/`. CI runs the same script.

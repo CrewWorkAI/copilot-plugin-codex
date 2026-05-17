@@ -33,11 +33,11 @@ echo
 echo "==> Checking authentication..."
 if copilot --version >/dev/null 2>&1; then
   echo "    Copilot CLI binary works. To verify auth, run a quick test:"
-  echo "      copilot -p 'Reply with the word OK and nothing else.' -s"
+  echo "      copilot -p 'Reply with the word OK and nothing else.' -s --allow-all-tools"
   echo
-  echo "    If auth is missing, run \`copilot\` once interactively to log in via gh auth."
+  echo "    If auth is missing, run \`copilot login\`, or set COPILOT_GITHUB_TOKEN, GH_TOKEN, or GITHUB_TOKEN."
 fi
 
 echo
 echo "==> Setup complete."
-echo "    Try: \$copilot:review  (Codex) or  /copilot:review  (Claude Code)"
+echo "    Try: \$copilot-plugin-codex review  (Codex) or  /copilot:review  (Claude Code)"

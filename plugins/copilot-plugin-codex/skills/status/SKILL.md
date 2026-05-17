@@ -3,7 +3,7 @@ name: status
 description: Use when the user asks whether a tracked Copilot job is done, what jobs are running, or wants to poll a background job.
 ---
 
-# `$copilot:status [job-id]` — list or inspect tracked jobs
+# `$copilot-plugin-codex status [job-id]` / `/copilot:status [job-id]` — list or inspect tracked jobs
 
 Reads job metadata files from `~/.<host>/plugins/copilot-plugin-codex/jobs/` and presents them.
 
@@ -29,7 +29,7 @@ Don't dump raw JSON unless the user asks. Format a compact summary:
 | Job ID | Type | Status | Started | Model |
 |---|---|---|---|---|
 
-For a single job, additionally show the transcript path (`<job-id>.jsonl`) and, if running, the PID. If the user wants the actual output, point them at `$copilot:result <job-id>`.
+For a single job, additionally show the transcript path (`<job-id>.jsonl`) and, if running, the PID. If the user wants the actual output, point them at `$copilot-plugin-codex result <job-id>` or `/copilot:result <job-id>`.
 
 ## Failure modes
 
