@@ -1,0 +1,13 @@
+{
+  "name": "copilot-plugin-codex",
+  "version": "0.1.0",
+  "description": "Use GitHub Copilot CLI from Claude Code for code review, rescue, and tracked background workflows. Companion to openai/codex-plugin-cc, but with Copilot as the worker.",
+  "author": {
+    "name": "CrewWorkAI"
+  },
+  "repository": "https://github.com/CrewWorkAI/copilot-plugin-codex",
+  "license": "MIT",
+  "keywords": ["copilot", "delegation", "code-review", "orchestration"],
+  "commands": ["./commands/"],
+  "strict": false
+}

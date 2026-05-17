@@ -1,0 +1,22 @@
+# Local state — never committed
+*.local.json
+.env
+.env.local
+
+# Job tracking output (when plugins are installed locally)
+**/jobs/*.jsonl
+**/jobs/*.meta.json
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Node — if any plugin grows JS tooling later
+node_modules/
+npm-debug.log*
+
+# Python — for the validator
+__pycache__/
+*.pyc

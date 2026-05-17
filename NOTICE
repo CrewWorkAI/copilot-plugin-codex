@@ -1,0 +1,31 @@
+copilot-plugin-codex
+Copyright 2026 CrewWorkAI
+
+This project is a derivative work of:
+
+  cc-plugin-codex
+  Copyright 2026 Sendbird, Inc.
+  https://github.com/sendbird/cc-plugin-codex
+  Licensed under the Apache License, Version 2.0.
+
+  cc-plugin-codex itself adapts material from:
+    codex-plugin-cc
+    Copyright 2026 OpenAI
+    https://github.com/openai/codex-plugin-cc
+    Licensed under the Apache License, Version 2.0.
+
+The directory layout, plugin manifest shape, command surface (`$copilot:setup`,
+`review`, `adversarial-review`, `rescue`, `status`, `result`, `cancel`), the
+per-command skill structure under `skills/`, and the foreground/background job
+tracking pattern follow the conventions established by cc-plugin-codex.
+Implementation details have been rewritten to target GitHub Copilot CLI as the
+worker (rather than Claude Code) and to support both Codex and Claude Code as
+hosts from a single codebase.
+
+Portions derived from cc-plugin-codex remain licensed under the Apache License,
+Version 2.0. A copy of the Apache 2.0 license is available at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+All other portions of this project are licensed under the MIT License — see
+the LICENSE file for details.

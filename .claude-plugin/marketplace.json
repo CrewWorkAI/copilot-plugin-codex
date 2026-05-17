@@ -1,0 +1,19 @@
+{
+  "name": "copilot-plugin-codex",
+  "owner": {
+    "name": "CrewWorkAI"
+  },
+  "metadata": {
+    "description": "Delegate work from Codex or Claude Code to GitHub Copilot CLI. Code review, rescue, and tracked background workflows.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "copilot-plugin-codex",
+      "source": "./",
+      "description": "Delegate work from Codex or Claude Code to GitHub Copilot CLI.",
+      "category": "orchestration",
+      "keywords": ["copilot", "delegation", "code-review", "orchestration", "multi-provider"]
+    }
+  ]
+}
