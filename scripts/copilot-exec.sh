@@ -51,6 +51,14 @@ mkdir -p "$JOBS_DIR"
 have_jq() { command -v jq >/dev/null 2>&1; }
 have_python() { command -v python3 >/dev/null 2>&1; }
 
+require_flag_value() {
+  local flag="$1"
+  if [ $# -lt 2 ] || [ -z "${2:-}" ] || [[ "$2" == -* ]]; then
+    echo "Missing value for ${flag}" >&2
+    exit 2
+  fi
+}
+
 need_json_runtime() {
   if ! have_jq && ! have_python; then
     echo "ERROR: jq or python3 is required for job metadata handling." >&2
@@ -107,6 +115,37 @@ restore_errexit_state() {
     set -e
   else
     set +e
+  fi
+}
+
+write_meta_file() {
+  local file="$1" job_id="$2" cmd_type="$3" started_at="$4" cwd="$5" model="$6" host="$7"
+  if have_jq; then
+    jq -n \
+      --arg job_id "$job_id" \
+      --arg type "$cmd_type" \
+      --arg started_at "$started_at" \
+      --arg cwd "$cwd" \
+      --arg model "$model" \
+      --arg host "$host" \
+      '{job_id:$job_id,type:$type,started_at:$started_at,cwd:$cwd,model:$model,host:$host,status:"running",pid:null}' > "$file"
+  else
+    python3 - "$file" "$job_id" "$cmd_type" "$started_at" "$cwd" "$model" "$host" <<'PY'
+import json, sys
+path, job_id, cmd_type, started_at, cwd, model, host = sys.argv[1:8]
+data = {
+    "job_id": job_id,
+    "type": cmd_type,
+    "started_at": started_at,
+    "cwd": cwd,
+    "model": model,
+    "host": host,
+    "status": "running",
+    "pid": None,
+}
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+PY
   fi
 }
 
@@ -184,11 +223,11 @@ WAIT=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --model)      MODEL="$2"; shift 2 ;;
+    --model)      require_flag_value "$1" "${2:-}"; MODEL="$2"; shift 2 ;;
     --background) BACKGROUND=true; shift ;;
-    --job-id)     JOB_ID="$2"; shift 2 ;;
-    --base)       BASE_REF="$2"; shift 2 ;;
-    --resume)     RESUME="$2"; shift 2 ;;
+    --job-id)     require_flag_value "$1" "${2:-}"; JOB_ID="$2"; shift 2 ;;
+    --base)       require_flag_value "$1" "${2:-}"; BASE_REF="$2"; shift 2 ;;
+    --resume)     require_flag_value "$1" "${2:-}"; RESUME="$2"; shift 2 ;;
     --continue)   CONTINUE=true; shift ;;
     --all)        ALL=true; shift ;;
     --wait)       WAIT=true; shift ;;
@@ -356,18 +395,7 @@ require_valid_job_id "$JOB_ID" "job id"
 TRANSCRIPT="$JOBS_DIR/$JOB_ID.jsonl"
 META="$JOBS_DIR/$JOB_ID.meta.json"
 
-cat > "$META" <<EOF
-{
-  "job_id": "$JOB_ID",
-  "type": "$CMD_TYPE",
-  "started_at": "$(now_utc)",
-  "cwd": "$(pwd)",
-  "model": "${MODEL:-default}",
-  "host": "$HOST",
-  "status": "running",
-  "pid": null
-}
-EOF
+write_meta_file "$META" "$JOB_ID" "$CMD_TYPE" "$(now_utc)" "$(pwd)" "${MODEL:-default}" "$HOST"
 
 # Allow tests to stub the copilot binary
 COPILOT_BIN="${COPILOT_BIN:-copilot}"

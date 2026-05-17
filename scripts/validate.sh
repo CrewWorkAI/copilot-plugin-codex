@@ -14,8 +14,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-fail=0
-fail() { echo "  ✗ $1" >&2; fail=1; }
+had_failures=0
+fail() { echo "  ✗ $1" >&2; had_failures=1; }
 pass() { echo "  ✓ $1"; }
 note() { echo "  · $1"; }
 
@@ -117,7 +117,7 @@ else
 fi
 
 echo
-if [ $fail -eq 0 ]; then
+if [ $had_failures -eq 0 ]; then
   echo "All checks passed."
   exit 0
 else

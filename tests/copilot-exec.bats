@@ -51,6 +51,14 @@ NOJQ_COMMANDS=(bash cat date mkdir mktemp mv python3 tee)
   [[ "$output" == *"Unknown flag"* ]]
 }
 
+@test "rejects missing values for valued flags" {
+  for flag in --model --job-id --base --resume; do
+    run bash "$EXEC" rescue "task" "$flag"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"Missing value for $flag"* ]]
+  done
+}
+
 @test "rejects unknown HOST" {
   HOST=mystery run bash "$EXEC" setup
   [ "$status" -eq 2 ]
@@ -158,6 +166,17 @@ STUB
   transcript="$ORCHESTRA_HOME/jobs/failjob.jsonl"
   [[ "$(cat "$transcript")" == *"stdout line"* ]]
   [[ "$(cat "$transcript")" == *"stderr line"* ]]
+}
+
+@test "metadata stays valid json when cwd contains quotes" {
+  weird_dir="$TEST_HOME/dir\"withquote"
+  mkdir -p "$weird_dir"
+  (
+    cd "$weird_dir"
+    bash "$EXEC" rescue "quoted cwd" --job-id quotedcwd >/dev/null
+  )
+  meta="$ORCHESTRA_HOME/jobs/quotedcwd.meta.json"
+  [ "$(jq -r .cwd "$meta")" = "$weird_dir" ]
 }
 
 @test "background run prints job id and stores PID" {
