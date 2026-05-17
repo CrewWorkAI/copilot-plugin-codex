@@ -1,6 +1,6 @@
 ---
 name: copilot
-description: Router for the copilot-plugin-codex delegation suite. Trigger when the user mentions Copilot CLI generically — "ask Copilot", "have Copilot look at this", "delegate to Copilot", "get a second opinion from Copilot" — without picking a specific command. This skill picks the right sub-skill (`setup`, `review`, `adversarial-review`, `rescue`, `status`, `result`, `cancel`) and hands off. Do not trigger when the user already named a specific `$copilot:<command>` — the matching sub-skill triggers directly.
+description: Use when the user mentions Copilot CLI generically, asks to delegate to Copilot, or asks for a Copilot second opinion without naming a specific `$copilot:<command>`.
 ---
 
 # Copilot delegation — router
@@ -12,7 +12,7 @@ This is the umbrella skill for delegating work from the host agent (Codex or Cla
 | Skill | Slash command | Purpose |
 |---|---|---|
 | [`setup`](../setup/SKILL.md) | `$copilot:setup` / `/copilot:setup` | Verify CLI install + auth |
-| [`review`](../review/SKILL.md) | `$copilot:review` / `/copilot:review` | Copilot's built-in `/review` on the branch |
+| [`review`](../review/SKILL.md) | `$copilot:review` / `/copilot:review` | Copilot review on the branch |
 | [`adversarial-review`](../adversarial-review/SKILL.md) | `$copilot:adversarial-review` | Hostile-framed review |
 | [`rescue`](../rescue/SKILL.md) | `$copilot:rescue <task>` | Arbitrary task delegation |
 | [`status`](../status/SKILL.md) | `$copilot:status [job-id]` | List/inspect tracked jobs |

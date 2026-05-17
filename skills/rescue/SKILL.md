@@ -1,6 +1,6 @@
 ---
 name: rescue
-description: Delegate an arbitrary coding task to GitHub Copilot CLI as a subprocess. Trigger when the user invokes `$copilot:rescue` / `/copilot:rescue`, asks "ask Copilot to <task>", "delegate this to Copilot", "have Copilot try this", or wants to use a model from Copilot's lineup (Claude Sonnet/Opus/Haiku, GPT-5.x, Gemini 3 Pro) that the host doesn't natively expose. Do not trigger for code reviews — use `review` / `adversarial-review`. Do not trigger when the user wants the host agent itself to do the work.
+description: Use when the user asks Copilot to perform a coding task, delegate work, or use a Copilot-only model. Do not trigger for code reviews or host-agent work.
 ---
 
 # `$copilot:rescue <task>` — delegate an arbitrary task to Copilot
@@ -10,8 +10,10 @@ Hand a free-form task to Copilot CLI in non-interactive mode with all tool permi
 ## Invocation
 
 ```bash
-HOST=$HOST bash "${PLUGIN_ROOT}/scripts/copilot-exec.sh" rescue "<task description>" [flags]
+HOST=<host> bash "<plugin-root>/scripts/copilot-exec.sh" rescue "<task description>" [flags]
 ```
+
+Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed plugin root; in a local checkout, that is the repo root.
 
 Flags:
 

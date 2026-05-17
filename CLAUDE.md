@@ -24,10 +24,10 @@ This is a modified fork of [`sendbird/cc-plugin-codex`](https://github.com/sendb
 
 ## What's still untested (in roughly the order it would matter)
 
-1. **End-to-end install in a host.** Neither `codex plugin marketplace add CrewWorkAI/copilot-plugin-codex` nor `/plugin marketplace add CrewWorkAI/copilot-plugin-codex` has actually been run against a real Codex/Claude Code install yet. Local-path install would be enough for the first smoke test.
-2. **`/review` in `-p` mode.** Copilot's `/review` is documented as an interactive slash command. The wrapper passes it inside the `-p` prompt string, which Copilot may or may not interpret correctly in non-interactive mode. Needs a real-CLI test.
+1. **End-to-end invocation in a host.** A local-path `codex plugin marketplace add ./` smoke test succeeds, but `$copilot:*` commands have not been exercised inside a fresh Codex thread and Claude Code install has not been smoke-tested yet.
+2. **Real Copilot review invocation.** The wrapper now uses a normal non-interactive review prompt instead of Copilot's interactive `/review` slash command, but the full flow still needs a real-CLI smoke test.
 3. **`${CLAUDE_PLUGIN_ROOT}` resolution.** The seven `commands/copilot-*.md` files reference `${CLAUDE_PLUGIN_ROOT}/scripts/...`. Needs verification at runtime in a real Claude Code install.
-4. **Codex `$plugin:command` mapping.** Splitting the skill into per-command subdirs matches `sendbird/cc-plugin-codex`'s structure, so this should work, but it's still unverified for our specific command names.
+4. **Codex `$plugin:command` mapping.** Splitting the skill into per-command subdirs matches `sendbird/cc-plugin-codex`'s structure, so this should work, but it still needs a fresh-session check for our specific command names.
 
 ## Known limitations that will not change
 
@@ -38,7 +38,7 @@ This is a modified fork of [`sendbird/cc-plugin-codex`](https://github.com/sendb
 ## Remaining nice-to-haves
 
 1. **Real install smoke test.** Install the plugin from a local path into Claude Code (`/plugin marketplace add ./` from the repo root), run `/copilot:setup`, then `/copilot:review` on a small dirty branch. Capture what breaks.
-2. **Same against Codex.** Same drill via `codex plugin marketplace add ./`. Verify `$copilot:review` actually triggers the `review` skill.
+2. **Same against Codex.** After `codex plugin marketplace add ./`, start a fresh Codex thread and verify `$copilot:review` actually triggers the `review` skill.
 3. **Enable the hook.** `hooks/hooks.json` is currently `[]`. Wire a Stop hook that fires `$copilot:review` post-edit, gated behind an opt-in flag.
 
 ## Future work (not for this iteration)

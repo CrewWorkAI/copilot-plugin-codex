@@ -1,6 +1,6 @@
 ---
 name: adversarial-review
-description: Run a hostile-framed code review via GitHub Copilot CLI on the current branch — Copilot is prompted to challenge assumptions and probe edge cases rather than do a standard review pass. Trigger when the user invokes `$copilot:adversarial-review` / `/copilot:adversarial-review`, asks for a "harsh review", "red team this", "challenge my assumptions", "find what I missed", or otherwise wants a sharper critique than `$copilot:review` would give.
+description: Use when the user asks Copilot for a harsh review, red-team pass, challenged assumptions, or a sharper critique than `$copilot:review`.
 ---
 
 # `$copilot:adversarial-review` — hostile-reviewer framing
@@ -10,8 +10,10 @@ Same surface as `$copilot:review`, but the prompt instructs Copilot to behave as
 ## Invocation
 
 ```bash
-HOST=$HOST bash "${PLUGIN_ROOT}/scripts/copilot-exec.sh" adversarial-review "" [flags]
+HOST=<host> bash "<plugin-root>/scripts/copilot-exec.sh" adversarial-review "" [flags]
 ```
+
+Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed plugin root; in a local checkout, that is the repo root.
 
 Same flags as `review`: `--base`, `--model`, `--background`, `--job-id`.
 

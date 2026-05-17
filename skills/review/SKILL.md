@@ -1,17 +1,19 @@
 ---
 name: review
-description: Delegate a code review of the current branch to GitHub Copilot CLI's built-in `/review` agent. Trigger when the user invokes `$copilot:review` / `/copilot:review`, asks "have Copilot review this", "get a second opinion from Copilot", "review my branch with Copilot", or otherwise asks for Copilot's review specifically (as opposed to a review from the host agent itself). Do not trigger when the user wants a sharper, hostile-framed review — use `adversarial-review` instead.
+description: Use when the user asks Copilot to review this branch, check the diff, or provide a second opinion. Do not trigger for hostile-framed review requests.
 ---
 
-# `$copilot:review` — Copilot `/review` on the current branch
+# `$copilot:review` — Copilot review on the current branch
 
-Runs Copilot CLI's built-in `/review` slash command in non-interactive mode against the current branch vs a base ref (default `main`).
+Asks Copilot CLI in non-interactive mode to review the current branch vs a base ref (default `main`).
 
 ## Invocation
 
 ```bash
-HOST=$HOST bash "${PLUGIN_ROOT}/scripts/copilot-exec.sh" review "" [flags]
+HOST=<host> bash "<plugin-root>/scripts/copilot-exec.sh" review "" [flags]
 ```
+
+Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed plugin root; in a local checkout, that is the repo root.
 
 Flags:
 
@@ -23,7 +25,7 @@ Flags:
 ## Under the hood
 
 ```bash
-copilot -p '/review the changes on this branch compared to <base>. Focus on bugs, security issues, and edge cases. Be concise. Lead with findings.' \
+copilot -p 'Review the changes on this branch compared to <base>. Focus on bugs, security issues, and edge cases. Use git commands as needed. Be concise. Lead with findings and cite file:line when possible.' \
   -s --allow-tool='shell(git:*)'
 ```
 

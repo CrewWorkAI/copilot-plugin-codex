@@ -1,6 +1,6 @@
 ---
 name: result
-description: Read back the final transcript of a previously tracked GitHub Copilot delegation job. Trigger when the user invokes `$copilot:result` / `/copilot:result`, asks "what did that Copilot job produce", "show me the result of <job-id>", or wants to inspect a background rescue/review that has completed.
+description: Use when the user asks what a tracked Copilot job produced or wants the result transcript for a completed background job.
 ---
 
 # `$copilot:result <job-id>` — fetch the final transcript
@@ -10,8 +10,10 @@ Reads `~/.<host>/plugins/copilot-plugin-codex/jobs/<job-id>.jsonl` and prints it
 ## Invocation
 
 ```bash
-HOST=$HOST bash "${PLUGIN_ROOT}/scripts/copilot-exec.sh" result <job-id>
+HOST=<host> bash "<plugin-root>/scripts/copilot-exec.sh" result <job-id>
 ```
+
+Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed plugin root; in a local checkout, that is the repo root.
 
 ## Format
 

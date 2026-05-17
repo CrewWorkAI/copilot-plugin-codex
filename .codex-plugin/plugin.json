@@ -1,7 +1,42 @@
 {
   "name": "copilot-plugin-codex",
   "version": "0.1.0",
-  "description": "Use GitHub Copilot CLI from Codex for code review, rescue, and tracked background workflows. Mirrors the shape of openai/codex-plugin-cc and sendbird/cc-plugin-codex, with Copilot as the worker.",
+  "description": "Use GitHub Copilot CLI from Codex for review, rescue, and tracked background jobs.",
+  "author": {
+    "name": "CrewWorkAI",
+    "url": "https://github.com/CrewWorkAI"
+  },
+  "homepage": "https://github.com/CrewWorkAI/copilot-plugin-codex",
+  "repository": "https://github.com/CrewWorkAI/copilot-plugin-codex",
+  "license": "MIT",
+  "keywords": [
+    "copilot",
+    "delegation",
+    "code-review",
+    "orchestration",
+    "multi-provider"
+  ],
   "skills": "./skills/",
-  "hooks": "./hooks/hooks.json"
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Copilot Plugin for Codex",
+    "shortDescription": "Delegate Codex work to GitHub Copilot CLI.",
+    "longDescription": "Delegate reviews, rescue tasks, and background jobs from Codex to GitHub Copilot CLI while preserving transcripts.",
+    "developerName": "CrewWorkAI",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/CrewWorkAI/copilot-plugin-codex",
+    "privacyPolicyURL": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",
+    "termsOfServiceURL": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
+    "defaultPrompt": [
+      "Verify Copilot CLI setup",
+      "Ask Copilot to review this branch",
+      "Delegate this task to Copilot"
+    ],
+    "brandColor": "#24292F",
+    "screenshots": []
+  }
 }

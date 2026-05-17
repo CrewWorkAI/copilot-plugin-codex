@@ -1,6 +1,6 @@
 ---
 name: status
-description: List tracked GitHub Copilot delegation jobs (running, completed, failed, cancelled) and optionally wait on a specific job. Trigger when the user invokes `$copilot:status` / `/copilot:status`, asks "is that Copilot job done", "what Copilot jobs are running", or wants to poll a background rescue/review.
+description: Use when the user asks whether a tracked Copilot job is done, what jobs are running, or wants to poll a background job.
 ---
 
 # `$copilot:status [job-id]` — list or inspect tracked jobs
@@ -10,8 +10,10 @@ Reads job metadata files from `~/.<host>/plugins/copilot-plugin-codex/jobs/` and
 ## Invocation
 
 ```bash
-HOST=$HOST bash "${PLUGIN_ROOT}/scripts/copilot-exec.sh" status [job-id] [--all] [--wait]
+HOST=<host> bash "<plugin-root>/scripts/copilot-exec.sh" status [job-id] [--all] [--wait]
 ```
+
+Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed plugin root; in a local checkout, that is the repo root.
 
 Behavior:
 

@@ -96,9 +96,10 @@ NOJQ_COMMANDS=(bash cat date mkdir mktemp mv python3 tee)
 
 # ---- argv building ---------------------------------------------------------
 
-@test "review builds /review prompt with default base=main and shell(git:*) allow" {
+@test "review builds non-interactive prompt with default base=main and shell(git:*) allow" {
   run bash "$EXEC" review ""
   [ "$status" -eq 0 ]
+  [[ "$output" != *"/review"* ]]
   [[ "$output" == *"compared to main"* ]]
   [[ "$output" == *"--allow-tool=shell(git:*)"* ]]
   [[ "$output" == *"-s"* ]]

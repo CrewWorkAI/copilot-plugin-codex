@@ -1,6 +1,6 @@
 ---
 name: cancel
-description: Cancel a running background GitHub Copilot delegation job. Trigger when the user invokes `$copilot:cancel` / `/copilot:cancel`, asks "kill that Copilot job", "stop the background Copilot run", or "cancel <job-id>". Do not trigger to cancel foreground runs — the host's own interrupt (Ctrl-C) handles those.
+description: Use when the user asks to cancel, kill, or stop a tracked background Copilot job. Do not trigger for foreground runs.
 ---
 
 # `$copilot:cancel <job-id>` — terminate a background job
@@ -10,8 +10,10 @@ Sends `SIGTERM` to the tracked PID, then marks the job `cancelled` in its metada
 ## Invocation
 
 ```bash
-HOST=$HOST bash "${PLUGIN_ROOT}/scripts/copilot-exec.sh" cancel <job-id>
+HOST=<host> bash "<plugin-root>/scripts/copilot-exec.sh" cancel <job-id>
 ```
+
+Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed plugin root; in a local checkout, that is the repo root.
 
 ## What gets preserved
 

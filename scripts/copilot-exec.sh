@@ -8,7 +8,7 @@
 #
 # Command types:
 #   setup                                 Verify Copilot CLI install/auth
-#   review                                Run /review on current branch vs --base
+#   review                                Review current branch vs --base
 #   adversarial-review                    Hostile reviewer framing
 #   rescue                                Generic task delegation
 #   status [job-id]                       List jobs (or show one)
@@ -267,7 +267,7 @@ EOF
   fi
   VERSION=$(copilot --version 2>/dev/null || echo "unknown")
   if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
-    echo "WARNING: not in a git repository — some Copilot CLI features (remote access, /review) require one." >&2
+    echo "WARNING: not in a git repository — some Copilot CLI features (remote access, diff review) require one." >&2
   fi
   echo "Copilot CLI: $VERSION"
   echo "Orchestra home: $ORCHESTRA_HOME"
@@ -358,7 +358,7 @@ COPILOT_ARGS=(-p)
 
 case "$CMD_TYPE" in
   review)
-    COPILOT_ARGS+=("/review the changes on this branch compared to $BASE_REF. Focus on bugs, security issues, and edge cases. Be concise. Lead with findings.")
+    COPILOT_ARGS+=("Review the changes on this branch compared to $BASE_REF. Focus on bugs, security issues, and edge cases. Use git commands as needed. Be concise. Lead with findings and cite file:line when possible.")
     COPILOT_ARGS+=(-s --allow-tool='shell(git:*)')
     ;;
   adversarial-review)

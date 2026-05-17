@@ -59,6 +59,45 @@ do
 done
 
 echo
+echo "==> Codex manifest metadata"
+if [ -f ".codex-plugin/plugin.json" ]; then
+  if python3 - <<'PY'
+import json
+from pathlib import Path
+
+manifest = json.loads(Path(".codex-plugin/plugin.json").read_text())
+required_top = ["author", "interface"]
+required_interface = [
+    "displayName",
+    "shortDescription",
+    "longDescription",
+    "developerName",
+    "category",
+    "capabilities",
+    "websiteURL",
+    "privacyPolicyURL",
+    "termsOfServiceURL",
+    "defaultPrompt",
+]
+
+missing = [key for key in required_top if key not in manifest]
+interface = manifest.get("interface")
+if isinstance(interface, dict):
+    missing.extend(f"interface.{key}" for key in required_interface if key not in interface)
+else:
+    missing.extend(f"interface.{key}" for key in required_interface)
+
+if missing:
+    raise SystemExit("missing: " + ", ".join(missing))
+PY
+  then
+    pass ".codex-plugin/plugin.json has required Codex interface metadata"
+  else
+    fail ".codex-plugin/plugin.json missing required Codex interface metadata"
+  fi
+fi
+
+echo
 echo "==> One SKILL.md per command"
 for skill in setup review adversarial-review rescue status result cancel; do
   if [ -f "skills/$skill/SKILL.md" ]; then
@@ -77,6 +116,26 @@ for cmd in setup review adversarial-review rescue status result cancel; do
     fail "commands/copilot-$cmd.md missing"
   fi
 done
+
+echo
+echo "==> Codex install/use docs"
+if grep -R "codex plugin install" README.md CLAUDE.md >/dev/null 2>&1; then
+  fail "Codex docs still reference removed 'codex plugin install' command"
+else
+  pass "Codex docs avoid removed 'codex plugin install' command"
+fi
+
+if find skills -name 'SKILL.md' -print0 | xargs -0 grep -E '\$\{PLUGIN_ROOT\}|\$PLUGIN_ROOT' >/dev/null 2>&1; then
+  fail "skills still rely on undefined PLUGIN_ROOT shell variable"
+else
+  pass "skills avoid undefined PLUGIN_ROOT shell variable"
+fi
+
+if find skills -name 'SKILL.md' -print0 | xargs -0 grep -E 'HOST=(codex|claude) bash "<plugin-root>' >/dev/null 2>&1; then
+  fail "shared skills hard-code one host in plugin-root command snippets"
+else
+  pass "shared skills keep plugin-root command snippets host-neutral"
+fi
 
 echo
 echo "==> Bash scripts parse"

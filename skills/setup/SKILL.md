@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Verify GitHub Copilot CLI is installed and authenticated. Trigger when the user invokes `$copilot:setup` / `/copilot:setup`, asks "is Copilot CLI installed", reports a "copilot not found" or auth error from any other copilot-plugin-codex command, or asks how to get the plugin working for the first time.
+description: Use when the user asks to verify Copilot CLI setup, reports `copilot` not found, hits auth errors, or needs first-time plugin setup.
 ---
 
 # `$copilot:setup` — verify GitHub Copilot CLI install + auth
@@ -10,16 +10,16 @@ Runs the install/version/auth check for Copilot CLI. Idempotent.
 ## Invocation
 
 ```bash
-HOST=$HOST bash "${PLUGIN_ROOT}/scripts/copilot-exec.sh" setup
+HOST=<host> bash "<plugin-root>/scripts/copilot-exec.sh" setup
 ```
 
-Where `$HOST` is `codex` or `claude`. Most hosts substitute `${PLUGIN_ROOT}` or `${CLAUDE_PLUGIN_ROOT}` automatically when the plugin is installed; in raw shell, point it at the checkout root.
+Set `<host>` to `codex` or `claude`. Replace `<plugin-root>` with the installed plugin root; in a local checkout, that is the repo root. Claude Code slash commands use `${CLAUDE_PLUGIN_ROOT}` from their command files.
 
 ## What it does
 
 1. Confirms `copilot` is on `PATH`. If missing, prints `npm install -g @github/copilot` and exits non-zero.
 2. Prints `copilot --version`.
-3. Warns if the current directory is not a git repo — Copilot's `/review` and remote access require one.
+3. Warns if the current directory is not a git repo — Copilot diff review and remote access require one.
 4. Prints the configured `ORCHESTRA_HOME` and host.
 
 ## Authentication
