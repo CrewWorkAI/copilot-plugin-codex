@@ -24,7 +24,7 @@ Copilot CLI is the only major coding agent CLI that lets you switch between Anth
 codex plugin marketplace add CrewWorkAI/copilot-plugin-codex
 ```
 
-Current Codex CLI versions register plugins through the marketplace command above. Start a new Codex thread after adding the marketplace, then use:
+Current Codex CLI versions register the marketplace through the command above. Then install or enable `copilot-plugin-codex@copilot-plugin-codex` from Codex's plugin marketplace UI and start a new thread:
 
 ```
 $copilot:setup
@@ -68,7 +68,7 @@ Then:
 | `$copilot:result <job-id>` | `/copilot:result <job-id>` | Get final output of a job |
 | `$copilot:cancel <job-id>` | `/copilot:cancel <job-id>` | Cancel a background job |
 
-All commands accept `--model <model-id>` to override Copilot's default (currently Claude Sonnet 4.5). Full model list in [`skills/copilot/SKILL.md`](./skills/copilot/SKILL.md).
+All commands accept `--model <model-id>` to override Copilot's default (currently Claude Sonnet 4.5). Full model list in [`plugins/copilot-plugin-codex/skills/copilot/SKILL.md`](./plugins/copilot-plugin-codex/skills/copilot/SKILL.md).
 
 ## Architecture
 
@@ -76,20 +76,21 @@ This plugin targets both Codex and Claude Code from one codebase:
 
 ```
 copilot-plugin-codex/
-├── .codex-plugin/plugin.json        ← Codex reads this
-├── .claude-plugin/
-│   ├── plugin.json                  ← Claude Code reads this
-│   └── marketplace.json             ← Claude Code marketplace catalog (one-entry)
-├── .agents/plugins/marketplace.json ← Codex marketplace catalog (one-entry)
-├── skills/copilot/SKILL.md          ← Canonical instructions (both hosts read this)
-├── commands/copilot-*.md            ← Claude Code slash command definitions
-├── hooks/hooks.json                 ← Codex hooks (review gate, disabled by default)
-└── scripts/
-    ├── copilot-exec.sh              ← The `copilot -p` wrapper
-    └── setup.sh                     ← Install/verify Copilot CLI
+├── .agents/plugins/marketplace.json           ← Codex marketplace catalog (one-entry)
+├── .claude-plugin/marketplace.json            ← Claude Code marketplace catalog (one-entry)
+├── plugins/copilot-plugin-codex/              ← Shared plugin payload
+│   ├── .codex-plugin/plugin.json              ← Codex reads this
+│   ├── .claude-plugin/plugin.json             ← Claude Code reads this
+│   ├── skills/copilot/SKILL.md                ← Canonical instructions (both hosts read this)
+│   ├── commands/copilot-*.md                  ← Claude Code slash command definitions
+│   ├── hooks/hooks.json                       ← Codex hooks (review gate, disabled by default)
+│   └── scripts/
+│       ├── copilot-exec.sh                    ← The `copilot -p` wrapper
+│       └── setup.sh                           ← Install/verify Copilot CLI
+└── scripts/validate.sh                        ← Repo validation
 ```
 
-`scripts/copilot-exec.sh` reads `HOST=codex` or `HOST=claude` from the environment to pick the right state directory (`~/.codex/plugins/...` vs `~/.claude/plugins/...`). Both hosts shell out to the same script.
+`plugins/copilot-plugin-codex/scripts/copilot-exec.sh` reads `HOST=codex` or `HOST=claude` from the environment to pick the right state directory (`~/.codex/plugins/...` vs `~/.claude/plugins/...`). Both hosts shell out to the same script.
 
 ## Known limitations
 

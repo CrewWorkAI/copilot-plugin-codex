@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "copilot-plugin-codex",
-      "source": "./",
+      "source": "./plugins/copilot-plugin-codex",
       "description": "Delegate work from Codex or Claude Code to GitHub Copilot CLI.",
       "category": "orchestration",
       "keywords": ["copilot", "delegation", "code-review", "orchestration", "multi-provider"]

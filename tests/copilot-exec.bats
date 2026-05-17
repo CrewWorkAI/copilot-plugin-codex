@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
-# Tests for scripts/copilot-exec.sh — exercise the arg-parsing and command-routing
+# Tests for plugins/copilot-plugin-codex/scripts/copilot-exec.sh — exercise the arg-parsing and command-routing
 # paths without actually calling Copilot CLI. A stub `copilot` is dropped on PATH
 # that echoes its argv to stdout, so we can assert on the args the wrapper built.
 
 setup() {
   REPO_ROOT="$(cd "${BATS_TEST_DIRNAME}/.." && pwd)"
-  EXEC="${REPO_ROOT}/scripts/copilot-exec.sh"
+  EXEC="${REPO_ROOT}/plugins/copilot-plugin-codex/scripts/copilot-exec.sh"
 
   TEST_HOME="$(mktemp -d)"
   STUB_DIR="$(mktemp -d)"
@@ -27,7 +27,7 @@ teardown() {
   rm -rf "$TEST_HOME" "$STUB_DIR"
 }
 
-# Keep this in sync with the external commands used by scripts/copilot-exec.sh
+# Keep this in sync with the external commands used by plugins/copilot-plugin-codex/scripts/copilot-exec.sh
 # in the jq-free rescue/status path.
 NOJQ_COMMANDS=(bash cat date mkdir mktemp mv python3 tee)
 
