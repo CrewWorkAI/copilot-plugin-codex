@@ -59,6 +59,12 @@ NOJQ_COMMANDS=(bash cat date mkdir mktemp mv python3 tee)
   done
 }
 
+@test "rejects flag-like values for valued flags" {
+  run bash "$EXEC" rescue "task" --model --background
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"Missing value for --model"* ]]
+}
+
 @test "rejects unknown HOST" {
   HOST=mystery run bash "$EXEC" setup
   [ "$status" -eq 2 ]

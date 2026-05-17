@@ -52,8 +52,8 @@ have_jq() { command -v jq >/dev/null 2>&1; }
 have_python() { command -v python3 >/dev/null 2>&1; }
 
 require_flag_value() {
-  local flag="$1" remaining="$2" value="${3-}"
-  if [ "$remaining" -lt 2 ] || [ -z "$value" ] || [[ "$value" == -* ]]; then
+  local flag="$1" has_value="$2" value="${3-}"
+  if [ "$has_value" != "present" ] || [ -z "$value" ] || [[ "$value" == -* ]]; then
     echo "Missing value for ${flag}" >&2
     exit 2
   fi
@@ -223,11 +223,11 @@ WAIT=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --model)      require_flag_value "$1" "$#" "${2-}"; MODEL="$2"; shift 2 ;;
+    --model)      require_flag_value "$1" "${2+present}" "${2-}"; MODEL="$2"; shift 2 ;;
     --background) BACKGROUND=true; shift ;;
-    --job-id)     require_flag_value "$1" "$#" "${2-}"; JOB_ID="$2"; shift 2 ;;
-    --base)       require_flag_value "$1" "$#" "${2-}"; BASE_REF="$2"; shift 2 ;;
-    --resume)     require_flag_value "$1" "$#" "${2-}"; RESUME="$2"; shift 2 ;;
+    --job-id)     require_flag_value "$1" "${2+present}" "${2-}"; JOB_ID="$2"; shift 2 ;;
+    --base)       require_flag_value "$1" "${2+present}" "${2-}"; BASE_REF="$2"; shift 2 ;;
+    --resume)     require_flag_value "$1" "${2+present}" "${2-}"; RESUME="$2"; shift 2 ;;
     --continue)   CONTINUE=true; shift ;;
     --all)        ALL=true; shift ;;
     --wait)       WAIT=true; shift ;;
